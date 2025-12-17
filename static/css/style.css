@@ -1,0 +1,134 @@
+/* Custom Styles for General Store Management */
+
+.sidebar {
+    background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%);
+    min-height: 100vh;
+}
+
+.sidebar .nav-link {
+    color: #ecf0f1;
+    padding: 12px 20px;
+    margin: 2px 0;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #34495e;
+    color: #ffffff;
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link i {
+    width: 20px;
+    margin-right: 10px;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #2c3e50;
+    background-color: #f8f9fa;
+}
+
+.product-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.product-card:hover {
+    border-color: #007bff;
+    transform: translateY(-3px);
+}
+
+.cart-item {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.invoice-box {
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .invoice-box {
+        box-shadow: none;
+        border: none;
+    }
+}
+
+/* Dashboard cards animation */
+.card.bg-primary, .card.bg-success, .card.bg-warning, .card.bg-info {
+    transition: all 0.3s ease;
+}
+
+.card.bg-primary:hover, .card.bg-success:hover, .card.bg-warning:hover, .card.bg-info:hover {
+    transform: scale(1.05);
+}
+
+/* Badge styles */
+.badge {
+    font-size: 0.75em;
+    padding: 0.4em 0.6em;
+}
+
+/* Form styles */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Alert styles */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Navigation styles */
+.navbar-brand {
+    font-weight: bold;
+    color: #2c3e50 !important;
+}
+
+/* Quick actions buttons */
+.btn-lg {
+    padding: 15px;
+    font-size: 1.1em;
+}
+
+.btn-lg i {
+    display: block;
+    margin-bottom: 8px;
+}
