@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales History{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Sales History</h4>
+    <a href="{% url 'pos_system' %}" class="btn btn-primary">
+        <i class="fas fa-cash-register"></i> New Sale
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if sales %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Sale ID</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Subtotal</th>
+                        <th>Extra Charges</th>
+                        <th>Final Amount</th>
+                        <th>Payment Method</th>
+                        <th>Date & Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td><strong>#{{ sale.id }}</strong></td>
+                        <td>
+                            {% if sale.customer %}
+                                {{ sale.customer.name }}
+                            {% else %}
+                                <span class="text-muted">Walk-in Customer</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for item in sale.items.all %}
+                                {{ item.product.name }} ({{ item.quantity }}) - {{ item.price }}<br>
+                            {% endfor %}
+                        </td>
+                        <td class="fw-bold">{{ sale.total_amount }}</td>
+                        <td>
+                            {% if sale.bag_charge > 0 or sale.delivery_charge > 0 or sale.other_charge > 0 %}
+                                {{ sale.bag_charge|add:sale.delivery_charge|add:sale.other_charge }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-success">{{ sale.final_amount }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if sale.payment_method == 'CASH' %}bg-success
+                                {% elif sale.payment_method == 'CARD' %}bg-primary
+                                {% else %}bg-info{% endif %}">
+                                {{ sale.payment_method }}
+                            </span>
+                        </td>
+                        <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'invoice' sale.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-receipt"></i> Invoice
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Sales Records Found</h5>
+            <p class="text-muted">Start by creating your first sale using the POS system.</p>
+            <a href="{% url 'pos_system' %}" class="btn btn-primary">
+                <i class="fas fa-cash-register"></i> Create First Sale
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

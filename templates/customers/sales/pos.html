@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+
+{% block title %}POS Billing{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Product Selection -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Products</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="searchProduct" class="form-control" placeholder="Search products...">
+                            <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-primary" type="button" onclick="searchProducts()">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <select id="categoryFilter" class="form-control" onchange="searchProducts()">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row" id="productGrid">
+                    {% for product in products %}
+                    <div class="col-md-3 mb-3 product-item" data-category="{{ product.category.name }}" data-name="{{ product.name|lower }}">
+                        <div class="card product-card" data-product-id="{{ product.id }}" 
+                             data-product-name="{{ product.name }}" 
+                             data-product-price="{{ product.selling_price }}"
+                             data-product-stock="{{ product.quantity }}">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">{{ product.name }}</h6>
+                                <p class="card-text text-success">Rs {{ product.selling_price }}</p>
+                                <small class="text-muted">Stock: {{ product.quantity }}</small>
+                                <button type="button" class="btn btn-sm btn-primary mt-2 add-to-cart">
+                                    Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Shopping Cart</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="saleForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <select name="customer" class="form-control">
+                            <option value="">Walk-in Customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select name="payment_method" class="form-control" required>
+                            <option value="CASH">Cash</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+
+                    <!-- Extra Charges Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Extra Charges</label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">Bag</span>
+                            <input type="number" id="bagCharge" class="form-control" value="0" min="0" step="1" onchange="updateExtraCharges()">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">Delivery</span>
+                            <input type="number" id="deliveryCharge" class="form-control" value="0" min="0" step="1" onchange="updateExtraCharges()">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text">Other</span>
+                            <input type="number" id="otherCharge" class="form-control" value="0" min="0" step="1" onchange="updateExtraCharges()">
+                        </div>
+                    </div>
+
+                    <div id="cartItems">
+                        <!-- Cart items will be added here dynamically -->
+                    </div>
+
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">Rs 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Bag Charge:</span>
+                            <span id="bagAmount">Rs 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Charge:</span>
+                            <span id="deliveryAmount">Rs 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Other Charges:</span>
+                            <span id="otherAmount">Rs 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 fw-bold">
+                            <span>Total:</span>
+                            <span id="totalAmount">Rs 0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 mt-3" id="checkoutBtn" disabled>
+                        <i class="fas fa-receipt"></i> Generate Bill
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cart = [];
+let subtotal = 0;
+let extraCharges = {
+    bag: 0,
+    delivery: 0,
+    other: 0
+};
+
+// Clear search function
+function clearSearch() {
+    document.getElementById('searchProduct').value = '';
+    document.getElementById('categoryFilter').value = '';
+    showAllProducts();
+}
+
+// Show all products
+function showAllProducts() {
+    document.querySelectorAll('.product-item').forEach(item => {
+        item.style.display = 'block';
+    });
+}
+
+// Search products function
+function searchProducts() {
+    const searchTerm = document.getElementById('searchProduct').value.toLowerCase().trim();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    
+    document.querySelectorAll('.product-item').forEach(item => {
+        const productName = item.dataset.name;
+        const productCategory = item.dataset.category;
+        
+        const matchesSearch = searchTerm === '' || productName.includes(searchTerm);
+        const matchesCategory = !categoryFilter || productCategory === categoryFilter;
+        
+        item.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
+    });
+}
+
+// Update extra charges
+function updateExtraCharges() {
+    extraCharges.bag = parseFloat(document.getElementById('bagCharge').value) || 0;
+    extraCharges.delivery = parseFloat(document.getElementById('deliveryCharge').value) || 0;
+    extraCharges.other = parseFloat(document.getElementById('otherCharge').value) || 0;
+    
+    updateCart();
+}
+
+// Add to cart functionality
+document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', function() {
+        const card = this.closest('.product-card');
+        const productId = card.dataset.productId;
+        const productName = card.dataset.productName;
+        const productPrice = parseFloat(card.dataset.productPrice);
+        const productStock = parseInt(card.dataset.productStock);
+
+        // Check if product already in cart
+        const existingItem = cart.find(item => item.id === productId);
+        
+        if (existingItem) {
+            if (existingItem.quantity < productStock) {
+                existingItem.quantity++;
+            } else {
+                alert('Not enough stock available!');
+                return;
+            }
+        } else {
+            if (productStock > 0) {
+                cart.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    quantity: 1,
+                    stock: productStock
+                });
+            } else {
+                alert('Product out of stock!');
+                return;
+            }
+        }
+
+        updateCart();
+    });
+});
+
+// Update cart display
+function updateCart() {
+    const cartItems = document.getElementById('cartItems');
+    const subtotalElem = document.getElementById('subtotal');
+    const bagAmountElem = document.getElementById('bagAmount');
+    const deliveryAmountElem = document.getElementById('deliveryAmount');
+    const otherAmountElem = document.getElementById('otherAmount');
+    const totalAmountElem = document.getElementById('totalAmount');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+
+    cartItems.innerHTML = '';
+    subtotal = 0;
+
+    if (cart.length === 0) {
+        cartItems.innerHTML = '<p class="text-muted text-center">Cart is empty</p>';
+        checkoutBtn.disabled = true;
+    } else {
+        checkoutBtn.disabled = false;
+        
+        cart.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item border-bottom pb-2 mb-2';
+            cartItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${item.name}</h6>
+                        <small>Rs ${item.price} x ${item.quantity}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">Rs ${itemTotal.toFixed(2)}</div>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(${index}, -1)">-</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(${index}, 1)">+</button>
+                            <button type="button" class="btn btn-outline-danger" onclick="removeFromCart(${index})">×</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="product_id" value="${item.id}">
+                <input type="hidden" name="quantity" value="${item.quantity}">
+            `;
+            cartItems.appendChild(cartItem);
+        });
+    }
+
+    // Calculate total with extra charges (NO GST)
+    const totalAmount = subtotal + extraCharges.bag + extraCharges.delivery + extraCharges.other;
+
+    subtotalElem.textContent = `Rs ${subtotal.toFixed(2)}`;
+    bagAmountElem.textContent = `Rs ${extraCharges.bag.toFixed(2)}`;
+    deliveryAmountElem.textContent = `Rs ${extraCharges.delivery.toFixed(2)}`;
+    otherAmountElem.textContent = `Rs ${extraCharges.other.toFixed(2)}`;
+    totalAmountElem.textContent = `Rs ${totalAmount.toFixed(2)}`;
+
+    // Add extra charges to form data
+    document.querySelectorAll('input[name="bag_charge"]').forEach(el => el.remove());
+    document.querySelectorAll('input[name="delivery_charge"]').forEach(el => el.remove());
+    document.querySelectorAll('input[name="other_charge"]').forEach(el => el.remove());
+
+    const form = document.getElementById('saleForm');
+    const bagInput = document.createElement('input');
+    bagInput.type = 'hidden';
+    bagInput.name = 'bag_charge';
+    bagInput.value = extraCharges.bag;
+    form.appendChild(bagInput);
+
+    const deliveryInput = document.createElement('input');
+    deliveryInput.type = 'hidden';
+    deliveryInput.name = 'delivery_charge';
+    deliveryInput.value = extraCharges.delivery;
+    form.appendChild(deliveryInput);
+
+    const otherInput = document.createElement('input');
+    otherInput.type = 'hidden';
+    otherInput.name = 'other_charge';
+    otherInput.value = extraCharges.other;
+    form.appendChild(otherInput);
+}
+
+// Cart management functions
+function updateQuantity(index, change) {
+    const item = cart[index];
+    const newQuantity = item.quantity + change;
+
+    if (newQuantity < 1) {
+        removeFromCart(index);
+    } else if (newQuantity > item.stock) {
+        alert('Not enough stock available!');
+    } else {
+        item.quantity = newQuantity;
+        updateCart();
+    }
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCart();
+}
+
+// Enter key for search
+document.getElementById('searchProduct').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchProducts();
+    }
+});
+
+// Show all products when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    showAllProducts();
+});
+</script>
+{% endblock %}
