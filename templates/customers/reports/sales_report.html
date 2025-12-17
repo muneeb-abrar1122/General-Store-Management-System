@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Sales Report</h4>
+    <div>
+        <form method="get" class="row g-2">
+            <div class="col-auto">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Revenue</h6>
+                <h3>{{ total_revenue }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Profit</h6>
+                <h3>{{ total_profit }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Sales</h6>
+                <h3>{{ total_sales }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="card-title">Date Range</h6>
+                <h6>{{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Sale ID</th>
+                        <th>Date & Time</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Revenue</th>
+                        <th>Profit</th>
+                        <th>Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td>#{{ sale.id }}</td>
+                        <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% if sale.customer %}
+                                {{ sale.customer.name }}
+                            {% else %}
+                                Walk-in
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for item in sale.items.all %}
+                                {{ item.product.name }} ({{ item.quantity }})<br>
+                            {% endfor %}
+                        </td>
+                        <td class="fw-bold">{{ sale.final_amount }}</td>
+                        <td class="text-success fw-bold">{{ sale.total_profit }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if sale.payment_method == 'CASH' %}bg-success
+                                {% elif sale.payment_method == 'CARD' %}bg-primary
+                                {% else %}bg-info{% endif %}">
+                                {{ sale.payment_method }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No sales found in this period</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
