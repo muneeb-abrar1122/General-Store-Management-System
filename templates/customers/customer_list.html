@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Customer Management</h4>
+    <a href="{% url 'add_customer' %}" class="btn btn-success">
+        <i class="fas fa-user-plus"></i> Add Customer
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Registered Date</th>
+                        <th>Total Purchases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.name }}</td>
+                        <td>
+                            {% if customer.phone %}
+                                {{ customer.phone }}
+                            {% else %}
+                                <span class="text-muted">Not provided</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if customer.email %}
+                                {{ customer.email }}
+                            {% else %}
+                                <span class="text-muted">Not provided</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if customer.address %}
+                                {{ customer.address|truncatewords:5 }}
+                            {% else %}
+                                <span class="text-muted">Not provided</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ customer.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% with customer.sale_set.count as purchase_count %}
+                                {{ purchase_count }} sale{{ purchase_count|pluralize }}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No customers found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
